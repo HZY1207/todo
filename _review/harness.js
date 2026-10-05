@@ -104,6 +104,7 @@ class El {
     this._emitFocusOut(null);
   }
   click() { this._clicked = true; this.dispatch('click'); }
+  get outerHTML() { return serialize(this); }
   dispatch(type, extra) {
     const ev = Object.assign({
       type, target: this, defaultPrevented: false,
@@ -173,6 +174,40 @@ function matchesOne(el, sel) {
   return true;
 }
 function walk(root, fn) { root.children.forEach(c => { fn(c); walk(c, fn); }); }
+
+/* ---------------- serialisation (for visual snapshots) ---------------- */
+const VOID_TAGS = new Set(['br', 'meta', 'link', 'input', 'img', 'hr', 'source']);
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ESC[c]); }
+function serialize(el, indent) {
+  const pad = indent || '';
+  const tag = el.tagName.toLowerCase();
+  const attrs = [];
+  if (el.id) attrs.push('id="' + esc(el.id) + '"');
+  if (el._className) attrs.push('class="' + esc(el._className.trim()) + '"');
+  Object.keys(el.attributes).forEach(k => {
+    if (k === 'id' || k === 'class') return;
+    if (k === 'hidden' && el.attributes[k] === '') { attrs.push('hidden'); return; }
+    attrs.push(k + '="' + esc(el.attributes[k]) + '"');
+  });
+  if (el.hidden && !('hidden' in el.attributes)) attrs.push('hidden');
+  const open = '<' + tag + (attrs.length ? ' ' + attrs.join(' ') : '') + '>';
+  if (VOID_TAGS.has(tag)) return pad + open;
+  const inner = el.children.length ? el.children.map(c => serialize(c, pad + '  ')).join('\n') : (el._text ? esc(el._text) : '');
+  return pad + open + (inner ? '\n' + inner + '\n' + pad : '') + '</' + tag + '>';
+}
+function outline(el, depth) {
+  const pad = '  '.repeat(depth || 0);
+  const parts = [];
+  if (el.id) parts.push('#' + el.id);
+  if (el._className) parts.push('.' + el._className.trim().split(/\s+/).join('.'));
+  let line = pad + el.tagName.toLowerCase() + (parts.length ? parts.join('') : '');
+  if (!el.children.length && el._text) line += '  "' + el._text + '"';
+  if (el.hidden) line += '   [hidden]';
+  const lines = [line];
+  el.children.forEach(c => lines.push(outline(c, (depth || 0) + 1)));
+  return lines.join('\n');
+}
 function query(root, sel, first) {
   const out = [];
   walk(root, el => { if (matches(el, sel)) out.push(el); });
@@ -334,7 +369,7 @@ function boot(opts) {
   return { sandbox, document, storage, alerts, swCalls, swListeners, reloads, created, $: id => document.getElementById(id), drain };
 }
 
-module.exports = { boot, El };
+module.exports = { boot, El, outline };
 
 /* ---------------- probe suite ---------------- */
 async function main() {

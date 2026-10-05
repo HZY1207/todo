@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="green">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快照 · 月历视图</title>
+<link rel="stylesheet" href="style.css">
+<style>body{max-width:720px}</style>
+</head>
+<body>
+<p style="font-size:12px;color:#8a9189;padding:8px 0">
+  静态快照 · 由 _review/snapshot.js 用真实脚本渲染 · 数据是演示数据，交互已冻结
+</p>
+<body>
+  <header class="topbar">
+    <h1 class="logo"></h1>
+    <nav class="view-switch" role="tablist" aria-label="视图切换">
+      <button class="view-btn" data-view="list" role="tab" aria-selected="false" aria-controls="view-list"></button>
+      <button class="view-btn active" data-view="calendar" role="tab" aria-selected="true" aria-controls="view-calendar"></button>
+    </nav>
+    <button id="btn-settings" class="icon-btn" aria-label="设置"></button>
+  </header>
+  <main id="view-list" class="view" role="tabpanel" aria-label="清单">
+    <form id="add-form" class="add-bar" autocomplete="off">
+      <input id="add-input" type="text" placeholder="添加待办…" maxlength="100" aria-label="待办内容">
+      <input id="add-date" type="date" aria-label="日期，留空表示未排期" title="留空 = 未排期" placeholder="未排期">
+      <button class="add-btn" type="submit" aria-label="添加"></button>
+    </form>
+    <div class="filters" role="group" aria-label="筛选">
+      <button class="filter-btn active" data-filter="all" aria-pressed="true"></button>
+      <button class="filter-btn" data-filter="active" aria-pressed="false"></button>
+      <button class="filter-btn" data-filter="done" aria-pressed="false"></button>
+      <button class="filter-btn" data-filter="undated" aria-pressed="false"></button>
+      <span id="counter" class="counter" role="status" aria-live="polite">
+6 未完成 / 8 项
+      </span>
+    </div>
+    <ul id="todo-list" class="todo-list" role="list">
+      <li class="todo-item overdue">
+        <button class="todo-check" role="checkbox" aria-checked="false" aria-label="交周报"></button>
+        <span class="todo-text">
+交周报
+        </span>
+        <span class="todo-date">
+10月4日
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item">
+        <button class="todo-check" role="checkbox" aria-checked="false" aria-label="买牛奶和鸡蛋"></button>
+        <span class="todo-text">
+买牛奶和鸡蛋
+        </span>
+        <span class="todo-date">
+10月5日
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item">
+        <button class="todo-check" role="checkbox" aria-checked="false" aria-label="给妈妈打电话"></button>
+        <span class="todo-text">
+给妈妈打电话
+        </span>
+        <span class="todo-date">
+10月6日
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item">
+        <button class="todo-check" role="checkbox" aria-checked="false" aria-label="预约牙医"></button>
+        <span class="todo-text">
+预约牙医
+        </span>
+        <span class="todo-flag">
+未排期
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item">
+        <button class="todo-check" role="checkbox" aria-checked="false" aria-label="看完《置身事内》第 4 章"></button>
+        <span class="todo-text">
+看完《置身事内》第 4 章
+        </span>
+        <span class="todo-date">
+10月5日
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item">
+        <button class="todo-check" role="checkbox" aria-checked="false" aria-label="把旧硬盘的照片备份到网盘"></button>
+        <span class="todo-text">
+把旧硬盘的照片备份到网盘
+        </span>
+        <span class="todo-flag">
+未排期
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item done">
+        <button class="todo-check done" role="checkbox" aria-checked="true" aria-label="整理上月账单"></button>
+        <span class="todo-text">
+整理上月账单
+        </span>
+        <span class="todo-date">
+10月5日
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+      <li class="todo-item done">
+        <button class="todo-check done" role="checkbox" aria-checked="true" aria-label="续订域名"></button>
+        <span class="todo-text">
+续订域名
+        </span>
+        <span class="todo-date">
+10月4日
+        </span>
+        <button class="todo-edit-btn" aria-label="编辑">
+✎
+        </button>
+        <button class="todo-del" aria-label="删除">
+✕
+        </button>
+      </li>
+    </ul>
+    <p id="empty-hint" class="empty-hint" hidden>
+暂无待办，添加一条吧
+    </p>
+  </main>
+  <main id="view-calendar" class="view active" role="tabpanel" aria-label="月历">
+    <div class="cal-head">
+      <button class="cal-nav" data-offset="-1" aria-label="上一月"></button>
+      <h2 id="cal-title" class="cal-title">
+2026年 十月
+      </h2>
+      <button id="btn-undated" class="cal-undated active" hidden aria-pressed="true" title="查看没有日期的待办">
+未排期 2
+      </button>
+      <button class="cal-nav" data-offset="1" aria-label="下一月"></button>
+    </div>
+    <div class="cal-weekdays" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div id="cal-grid" class="cal-grid">
+      <button class="cal-cell other" aria-label="2026年9月28日（非本月），无待办">
+        <span class="cal-day">
+28
+        </span>
+      </button>
+      <button class="cal-cell other" aria-label="2026年9月29日（非本月），无待办">
+        <span class="cal-day">
+29
+        </span>
+      </button>
+      <button class="cal-cell other" aria-label="2026年9月30日（非本月），无待办">
+        <span class="cal-day">
+30
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月1日，无待办">
+        <span class="cal-day">
+1
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月2日，无待办">
+        <span class="cal-day">
+2
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月3日，无待办">
+        <span class="cal-day">
+3
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月4日，2 项待办，1 项未完成">
+        <span class="cal-day">
+4
+        </span>
+        <span class="cal-text">
+交周报
+        </span>
+        <span class="cal-text done">
+续订域名
+        </span>
+      </button>
+      <button class="cal-cell today" aria-label="2026年10月5日，3 项待办，2 项未完成">
+        <span class="cal-day">
+5
+        </span>
+        <span class="cal-text">
+买牛奶和鸡蛋
+        </span>
+        <span class="cal-text">
+看完《置身事内》第 4 章
+        </span>
+        <span class="cal-more">
++1
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月6日，1 项待办，1 项未完成">
+        <span class="cal-day">
+6
+        </span>
+        <span class="cal-text">
+给妈妈打电话
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月7日，无待办">
+        <span class="cal-day">
+7
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月8日，无待办">
+        <span class="cal-day">
+8
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月9日，无待办">
+        <span class="cal-day">
+9
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月10日，无待办">
+        <span class="cal-day">
+10
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月11日，无待办">
+        <span class="cal-day">
+11
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月12日，无待办">
+        <span class="cal-day">
+12
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月13日，无待办">
+        <span class="cal-day">
+13
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月14日，无待办">
+        <span class="cal-day">
+14
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月15日，无待办">
+        <span class="cal-day">
+15
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月16日，无待办">
+        <span class="cal-day">
+16
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月17日，无待办">
+        <span class="cal-day">
+17
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月18日，无待办">
+        <span class="cal-day">
+18
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月19日，无待办">
+        <span class="cal-day">
+19
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月20日，无待办">
+        <span class="cal-day">
+20
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月21日，无待办">
+        <span class="cal-day">
+21
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月22日，无待办">
+        <span class="cal-day">
+22
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月23日，无待办">
+        <span class="cal-day">
+23
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月24日，无待办">
+        <span class="cal-day">
+24
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月25日，无待办">
+        <span class="cal-day">
+25
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月26日，无待办">
+        <span class="cal-day">
+26
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月27日，无待办">
+        <span class="cal-day">
+27
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月28日，无待办">
+        <span class="cal-day">
+28
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月29日，无待办">
+        <span class="cal-day">
+29
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月30日，无待办">
+        <span class="cal-day">
+30
+        </span>
+      </button>
+      <button class="cal-cell" aria-label="2026年10月31日，无待办">
+        <span class="cal-day">
+31
+        </span>
+      </button>
+      <button class="cal-cell other" aria-label="2026年11月1日（非本月），无待办">
+        <span class="cal-day">
+1
+        </span>
+      </button>
+    </div>
+    <section class="day-panel">
+      <div class="day-panel-head">
+        <h3 id="day-title">
+未排期
+        </h3>
+        <span class="panel-actions">
+          <button id="btn-today" class="icon-btn" title="回到今天"></button>
+          <button id="btn-panel-back" hidden></button>
+        </span>
+      </div>
+      <form id="day-add-form" autocomplete="off">
+        <input id="day-add-input" type="text" placeholder="为这一天添加待办…" maxlength="100" aria-label="待办内容">
+        <button class="add-btn" type="submit" aria-label="添加"></button>
+      </form>
+      <ul id="day-list" class="todo-list" role="list">
+        <li class="todo-item">
+          <button class="todo-check" role="checkbox" aria-checked="false" aria-label="预约牙医"></button>
+          <span class="todo-text">
+预约牙医
+          </span>
+          <button class="todo-del" aria-label="删除">
+✕
+          </button>
+        </li>
+        <li class="todo-item">
+          <button class="todo-check" role="checkbox" aria-checked="false" aria-label="把旧硬盘的照片备份到网盘"></button>
+          <span class="todo-text">
+把旧硬盘的照片备份到网盘
+          </span>
+          <button class="todo-del" aria-label="删除">
+✕
+          </button>
+        </li>
+      </ul>
+      <p id="day-empty" class="empty-hint" hidden>
+没有未排期的待办
+      </p>
+    </section>
+  </main>
+  <div id="settings-overlay" class="overlay" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title"></h2>
+        <button class="icon-btn" data-close="" aria-label="关闭"></button>
+      </div>
+      <h3></h3>
+      <div id="theme-grid" class="theme-grid" role="group" aria-label="主题">
+        <button class="theme-card active" data-theme="green" aria-pressed="true">
+          <i style="--c:#4a7c59"></i>
+        </button>
+        <button class="theme-card" data-theme="mono" aria-pressed="false">
+          <i style="--c:#3b3f46"></i>
+        </button>
+        <button class="theme-card" data-theme="blue" aria-pressed="false">
+          <i style="--c:#3d6e91"></i>
+        </button>
+      </div>
+      <h3></h3>
+      <div class="actions">
+        <button id="btn-export" class="btn"></button>
+        <button id="btn-import" class="btn"></button>
+        <input id="import-file" type="file" accept=".json,application/json" hidden>
+        <button id="btn-restore" class="btn"></button>
+        <input id="restore-file" type="file" accept=".json,application/json" hidden>
+        <button id="btn-clear" class="btn btn-danger"></button>
+      </div>
+      <p class="hint">
+        <br>
+        <b></b>
+        <br>
+        <b></b>
+      </p>
+      <h3></h3>
+      <p class="hint"></p>
+      <p id="stat-hint" class="hint count-hint">
+共 8 项待办，已完成 2 项，未排期 2 项。数据仅保存在本机浏览器中。
+      </p>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-msg"></span>
+    <button id="toast-undo" class="toast-undo" type="button"></button>
+  </div>
+</body>
+</body>
+</html>
