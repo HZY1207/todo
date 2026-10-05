@@ -3,9 +3,11 @@
 
   var MONTHS = ['一月', '二月', '三月', '四月', '五月', '六月',
     '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-  var curYear, curMonth, curDay; // 当前显示的月份
-  var selectedDate = null;       // 选中的日期 YYYY-MM-DD
+  var curYear, curMonth;
+  var selectedDate = null;   // YYYY-MM-DD
+  var mode = 'date';         // 'date' | 'undated'
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -16,13 +18,37 @@
     return fmt(t.getFullYear(), t.getMonth(), t.getDate());
   }
 
+  function isRealDate(y, m, d) {
+    var probe = new Date(y, m, d);
+    return probe.getFullYear() === y && probe.getMonth() === m && probe.getDate() === d;
+  }
+
+  // 严格解析：拒绝 2026-13-45 这类会被 Date 静默滚动的值
   function parseDate(str) {
-    var p = String(str).split('-');
-    if (p.length !== 3) return null;
+    if (typeof str !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+    var p = str.split('-');
     var y = parseInt(p[0], 10), m = parseInt(p[1], 10) - 1, d = parseInt(p[2], 10);
-    if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+    if (!isRealDate(y, m, d)) return null;
     return new Date(y, m, d);
   }
+
+  function byDate() {
+    var map = { dated: {}, undated: [] };
+    Store.items().forEach(function (it) {
+      var key = Store.isValidDate(it.date) ? it.date : '';
+      if (!key) { map.undated.push(it); return; }
+      (map.dated[key] = map.dated[key] || []).push(it);
+    });
+    return map;
+  }
+
+  function sortDay(list) {
+    var undone = list.filter(function (t) { return !t.done; });
+    var done = list.filter(function (t) { return t.done; });
+    return undone.concat(done);
+  }
+
+  /* ---------- 月历 ---------- */
 
   function render() {
     var grid = document.getElementById('cal-grid');
@@ -33,22 +59,24 @@
     title.textContent = curYear + '年 ' + MONTHS[curMonth];
 
     var today = todayStr();
-    if (!selectedDate) selectedDate = today;
+    if (mode === 'date' && !selectedDate) selectedDate = today;
+
+    var map = byDate();
+    var undatedBtn = document.getElementById('btn-undated');
+    if (undatedBtn) {
+      undatedBtn.textContent = '未排期 ' + map.undated.length;
+      undatedBtn.hidden = map.undated.length === 0;
+      undatedBtn.classList.toggle('active', mode === 'undated');
+      undatedBtn.setAttribute('aria-pressed', mode === 'undated' ? 'true' : 'false');
+    }
 
     var first = new Date(curYear, curMonth, 1);
-    var startWeekday = (first.getDay() + 6) % 7; // 周一为第一天
+    var startWeekday = (first.getDay() + 6) % 7;                       // 周一为第一天
     var daysInMonth = new Date(curYear, curMonth + 1, 0).getDate();
     var prevDays = new Date(curYear, curMonth, 0).getDate();
+    var rows = Math.ceil((startWeekday + daysInMonth) / 7);            // 只渲染真实需要的周数
 
-    var items = Store.items();
-    var byDate = {};
-    items.forEach(function (it) {
-      if (!it.date) return;
-      var k = it.date;
-      (byDate[k] = byDate[k] || []).push(it);
-    });
-
-    for (var i = 0; i < 42; i++) {
+    for (var i = 0; i < rows * 7; i++) {
       var dayNum, isOther = false, year = curYear, month = curMonth;
       if (i < startWeekday) {
         isOther = true;
@@ -68,19 +96,18 @@
       var cell = document.createElement('button');
       cell.className = 'cal-cell';
       cell.type = 'button';
+
       var dayNumEl = document.createElement('span');
       dayNumEl.className = 'cal-day';
       dayNumEl.textContent = dayNum;
       cell.appendChild(dayNumEl);
+
       if (isOther) cell.classList.add('other');
       if (key === today) cell.classList.add('today');
-      if (key === selectedDate) cell.classList.add('selected');
+      if (mode === 'date' && key === selectedDate) cell.classList.add('selected');
 
-      var dayItems = byDate[key] || [];
-      var undone = dayItems.filter(function (t) { return !t.done; });
-      var doneItems = dayItems.filter(function (t) { return t.done; });
-      var shown = undone.concat(doneItems).slice(0, 2);
-      shown.forEach(function (it) {
+      var dayItems = sortDay(map.dated[key] || []);
+      dayItems.slice(0, 2).forEach(function (it) {
         var line = document.createElement('span');
         line.className = 'cal-text' + (it.done ? ' done' : '');
         line.textContent = it.text;
@@ -93,6 +120,12 @@
         cell.appendChild(more);
       }
 
+      var dayLabel = year + '年' + (month + 1) + '月' + dayNum + '日';
+      var pending = dayItems.filter(function (t) { return !t.done; }).length;
+      cell.setAttribute('aria-label',
+        dayLabel + (isOther ? '（非本月）' : '') +
+        (dayItems.length ? '，' + dayItems.length + ' 项待办，' + pending + ' 项未完成' : '，无待办'));
+
       cell.addEventListener('click', (function (key) {
         return function () { select(key); };
       })(key));
@@ -100,26 +133,10 @@
       grid.appendChild(cell);
     }
 
-    renderDayPanel(byDate);
+    renderDayPanel(map);
   }
 
-  function renderDayPanel(byDate) {
-    var title = document.getElementById('day-title');
-    var listEl = document.getElementById('day-list');
-    var empty = document.getElementById('day-empty');
-    listEl.innerHTML = '';
-
-    var d = parseDate(selectedDate);
-    var weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    title.textContent = selectedDate + (d ? ' · ' + weekdays[d.getDay()] : '');
-
-    var list = byDate ? byDate[selectedDate] || [] : [];
-    list.forEach(function (it) {
-      var li = buildItem(it);
-      listEl.appendChild(li);
-    });
-    empty.hidden = list.length > 0;
-  }
+  /* ---------- 当日面板 ---------- */
 
   function buildItem(it) {
     var li = document.createElement('li');
@@ -128,9 +145,11 @@
 
     var check = document.createElement('button');
     check.type = 'button';
-    check.className = 'todo-check';
-    check.setAttribute('aria-label', it.done ? '标记未完成' : '标记完成');
-    if (it.done) check.setAttribute('aria-checked', 'true');
+    check.className = 'todo-check' + (it.done ? ' done' : '');
+    check.setAttribute('role', 'checkbox');
+    check.setAttribute('aria-checked', it.done ? 'true' : 'false');
+    check.setAttribute('aria-label', it.text);
+    check.title = it.done ? '标记未完成' : '标记完成';
     check.addEventListener('click', function () { Store.toggle(it.id); });
 
     var text = document.createElement('span');
@@ -150,15 +169,51 @@
     return li;
   }
 
+  function renderDayPanel(map) {
+    var title = document.getElementById('day-title');
+    var listEl = document.getElementById('day-list');
+    var empty = document.getElementById('day-empty');
+    var input = document.getElementById('day-add-input');
+    var back = document.getElementById('btn-panel-back');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    var undated = mode === 'undated';
+    if (undated) {
+      title.textContent = '未排期';
+      if (back) back.hidden = false;
+      if (input) input.placeholder = '添加一条未排期待办…';
+    } else {
+      var d = parseDate(selectedDate);
+      title.textContent = selectedDate + (d ? ' · ' + WEEKDAYS[d.getDay()] : '');
+      if (back) back.hidden = true;
+      if (input) input.placeholder = '为这一天添加待办…';
+    }
+
+    var list = sortDay(undated ? map.undated : (map.dated[selectedDate] || []));
+    list.forEach(function (it) { listEl.appendChild(buildItem(it)); });
+
+    if (empty) {
+      empty.hidden = list.length > 0;
+      empty.textContent = undated ? '没有未排期的待办' : '这一天还没有待办';
+    }
+  }
+
+  /* ---------- 交互 ---------- */
+
   function select(key) {
-    var parts = key.split('-');
-    curYear = parseInt(parts[0], 10);
-    curMonth = parseInt(parts[1], 10) - 1;
+    if (!parseDate(key)) return;
+    var p = key.split('-');
+    curYear = parseInt(p[0], 10);
+    curMonth = parseInt(p[1], 10) - 1;
     selectedDate = key;
+    mode = 'date';
     render();
   }
 
   function nav(offset) {
+    if (isNaN(curYear) || isNaN(curMonth)) return;
     var m = new Date(curYear, curMonth + offset, 1);
     curYear = m.getFullYear();
     curMonth = m.getMonth();
@@ -170,6 +225,12 @@
     curYear = t.getFullYear();
     curMonth = t.getMonth();
     selectedDate = todayStr();
+    mode = 'date';
+    render();
+  }
+
+  function showUndated() {
+    mode = 'undated';
     render();
   }
 
@@ -178,11 +239,18 @@
     curYear = d.getFullYear();
     curMonth = d.getMonth();
     selectedDate = todayStr();
+    mode = 'date';
 
     document.querySelectorAll('.cal-nav').forEach(function (btn) {
       btn.addEventListener('click', function () { nav(parseInt(btn.dataset.offset, 10)); });
     });
     document.getElementById('btn-today').addEventListener('click', goToday);
+
+    var back = document.getElementById('btn-panel-back');
+    if (back) back.addEventListener('click', goToday);
+
+    var undatedBtn = document.getElementById('btn-undated');
+    if (undatedBtn) undatedBtn.addEventListener('click', showUndated);
 
     var form = document.getElementById('day-add-form');
     var input = document.getElementById('day-add-input');
@@ -190,8 +258,12 @@
       e.preventDefault();
       var text = input.value.trim();
       if (!text) return;
-      Store.add(text, selectedDate);
+      var it = Store.add(text, mode === 'undated' ? '' : selectedDate);
+      if (it && it._saved === false) {
+        alert('保存失败：浏览器存储不可用（可能是隐私模式）或已写满。请先导出备份。');
+      }
       input.value = '';
+      input.focus();
     });
 
     Store.onChange(render);
@@ -200,6 +272,7 @@
 
   window.Calendar = {
     init: init,
-    getSelected: function () { return selectedDate; }
+    getSelected: function () { return mode === 'undated' ? '' : selectedDate; },
+    isUndated: function () { return mode === 'undated'; }
   };
 })();

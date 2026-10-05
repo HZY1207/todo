@@ -1,53 +1,66 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="green">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#f3f6f0">
   <meta name="description" content="简约护眼待办事项，支持月历视图与数据导出导入">
   <title>Todo · 待办清单</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" sizes="192x192">
   <link rel="apple-touch-icon" href="images/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <!-- 在样式表之前定好主题，避免已选「黑白 / 蓝白」的用户每次冷启动先看到一帧绿白 -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('todo_theme_v1');
+        if (t !== 'green' && t !== 'mono' && t !== 'blue') t = 'green';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="topbar">
     <h1 class="logo">待办</h1>
-    <nav class="view-switch" role="tablist">
-      <button class="view-btn active" data-view="list" role="tab">清单</button>
-      <button class="view-btn" data-view="calendar" role="tab">月历</button>
+    <nav class="view-switch" role="tablist" aria-label="视图切换">
+      <button class="view-btn active" data-view="list" role="tab" aria-selected="true" aria-controls="view-list">清单</button>
+      <button class="view-btn" data-view="calendar" role="tab" aria-selected="false" aria-controls="view-calendar">月历</button>
     </nav>
     <button class="icon-btn" id="btn-settings" aria-label="设置">⚙</button>
   </header>
 
   <!-- 清单视图 -->
-  <main id="view-list" class="view active">
+  <main id="view-list" class="view active" role="tabpanel" aria-label="清单">
     <form id="add-form" class="add-bar" autocomplete="off">
-      <input id="add-input" type="text" placeholder="添加待办…" maxlength="100">
-      <input id="add-date" type="date" aria-label="日期">
+      <input id="add-input" type="text" placeholder="添加待办…" maxlength="100" aria-label="待办内容">
+      <input id="add-date" type="date" aria-label="日期，留空表示未排期" title="留空 = 未排期" placeholder="未排期">
       <button type="submit" class="add-btn" aria-label="添加">＋</button>
     </form>
 
-    <div class="filters">
-      <button class="filter-btn active" data-filter="all">全部</button>
-      <button class="filter-btn" data-filter="active">进行中</button>
-      <button class="filter-btn" data-filter="done">已完成</button>
-      <span class="counter" id="counter"></span>
+    <div class="filters" role="group" aria-label="筛选">
+      <button class="filter-btn active" data-filter="all" aria-pressed="true">全部</button>
+      <button class="filter-btn" data-filter="active" aria-pressed="false">进行中</button>
+      <button class="filter-btn" data-filter="done" aria-pressed="false">已完成</button>
+      <button class="filter-btn" data-filter="undated" aria-pressed="false">未排期</button>
+      <span class="counter" id="counter" role="status" aria-live="polite"></span>
     </div>
 
-    <ul id="todo-list" class="todo-list"></ul>
+    <ul id="todo-list" class="todo-list" role="list"></ul>
 
     <p class="empty-hint" id="empty-hint" hidden>暂无待办，添加一条吧</p>
   </main>
 
   <!-- 月历视图 -->
-  <main id="view-calendar" class="view">
+  <main id="view-calendar" class="view" role="tabpanel" aria-label="月历">
     <div class="cal-head">
       <button class="cal-nav" data-offset="-1" aria-label="上一月">&lt;</button>
       <h2 class="cal-title" id="cal-title"></h2>
+      <button class="cal-undated" id="btn-undated" hidden aria-pressed="false" title="查看没有日期的待办">未排期 0</button>
       <button class="cal-nav" data-offset="1" aria-label="下一月">&gt;</button>
     </div>
-    <div class="cal-weekdays">
+    <div class="cal-weekdays" aria-hidden="true">
       <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
@@ -55,43 +68,59 @@
     <section class="day-panel">
       <div class="day-panel-head">
         <h3 id="day-title"></h3>
-        <button class="icon-btn" id="btn-today" title="回到今天">今天</button>
+        <span class="panel-actions">
+          <button class="icon-btn" id="btn-today" title="回到今天">今天</button>
+          <button id="btn-panel-back" hidden>返回今天</button>
+        </span>
       </div>
       <form id="day-add-form" autocomplete="off">
-        <input id="day-add-input" type="text" placeholder="为这一天添加待办…" maxlength="100">
-        <button type="submit" class="add-btn">＋</button>
+        <input id="day-add-input" type="text" placeholder="为这一天添加待办…" maxlength="100" aria-label="待办内容">
+        <button type="submit" class="add-btn" aria-label="添加">＋</button>
       </form>
-      <ul id="day-list" class="todo-list"></ul>
+      <ul id="day-list" class="todo-list" role="list"></ul>
       <p class="empty-hint" id="day-empty" hidden>这一天还没有待办</p>
     </section>
   </main>
 
   <!-- 设置面板 -->
   <div class="overlay" id="settings-overlay" hidden>
-    <div class="sheet" role="dialog" aria-label="设置">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="sheet-head">
-        <h2>设置</h2>
+        <h2 id="settings-title">设置</h2>
         <button class="icon-btn" data-close aria-label="关闭">✕</button>
       </div>
 
       <h3>主题</h3>
-      <div class="theme-grid" id="theme-grid">
-        <button class="theme-card" data-theme="green"><i style="--c:#4a7c59"></i>绿白</button>
-        <button class="theme-card" data-theme="mono"><i style="--c:#3b3f46"></i>黑白</button>
-        <button class="theme-card" data-theme="blue"><i style="--c:#3d6e91"></i>蓝白</button>
+      <div class="theme-grid" id="theme-grid" role="group" aria-label="主题">
+        <button class="theme-card" data-theme="green" aria-pressed="false"><i style="--c:#4a7c59"></i>绿白</button>
+        <button class="theme-card" data-theme="mono" aria-pressed="false"><i style="--c:#3b3f46"></i>黑白</button>
+        <button class="theme-card" data-theme="blue" aria-pressed="false"><i style="--c:#3d6e91"></i>蓝白</button>
       </div>
 
       <h3>数据</h3>
       <div class="actions">
         <button class="btn" id="btn-export">导出数据</button>
-        <button class="btn" id="btn-import">导入数据</button>
+        <button class="btn" id="btn-import">导入并合并</button>
         <input type="file" id="import-file" accept=".json,application/json" hidden>
+        <button class="btn" id="btn-restore">从备份还原</button>
+        <input type="file" id="restore-file" accept=".json,application/json" hidden>
         <button class="btn btn-danger" id="btn-clear">清空全部</button>
       </div>
-      <p class="hint">导出后可通过微信 / 网盘等把 JSON 文件发到电脑，在电脑上打开本页并导入即可。</p>
+      <p class="hint">导出后可通过微信 / 网盘等把 JSON 文件发到电脑，在电脑上打开本页并导入即可。<br>
+        <b>导入并合并</b>：把文件里的待办加进现有数据，内容完全相同的会跳过。<br>
+        <b>从备份还原</b>：先清空当前数据，再完全按备份文件恢复（当前数据会被覆盖）。</p>
+
+      <h3>键盘 / 触屏操作</h3>
+      <p class="hint">双击待办文字（手机上长按）即可修改内容和日期；删除后 6 秒内可点下方提示中的「撤销」恢复。</p>
 
       <p class="hint count-hint" id="stat-hint"></p>
     </div>
+  </div>
+
+  <!-- 操作提示（撤销删除 / 刷新到新版本） -->
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-msg">已删除</span>
+    <button type="button" class="toast-undo" id="toast-undo">撤销</button>
   </div>
 
   <script src="js/store.js"></script>
